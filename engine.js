@@ -61,11 +61,163 @@
   // Each category: patterns, the feeling it usually carries, why it matters (shown, never sent),
   // email subjects, and chat lines as [say, ask] pairs per level, plus a passive-aggressive set.
   // {thing} = a work noun found in the message (or the fallback). {count}/{countth} = "three"/"fourth".
+  // {topic} = what the message is about, picked from a fixed list (see TOPICS), never the user's own words.
   var CATS = [
+    { id: 'refused', feel: 'disappointed', why: 'a request of yours was turned down', tf: 'my request',
+      topics: ['my leave request', 'my cancelled work from home day', 'a pay rise', 'my monitor request'],
+      re: [/\b(reject\w*|denied|declined|refused|turned down|said no)\b/],
+      subject: ['About {topic}', 'Revisiting {topic}', 'Request to reconsider: {topic}'],
+      warm: [["I was really disappointed that {topic} was turned down.", "Could we talk about whether there's a way to make it work?"],
+             ["{Topic} means a lot to me, so the answer was hard to hear.", "Could we look at it again together?"]],
+      straight: [["I'd like to understand why {topic} was turned down.", "Could we discuss options that would make it work?"],
+                 ["{Topic} matters to me, and I'd like to revisit it.", "What would need to change for it to be approved?"]],
+      firm: [["I'm asking for {topic} to be reconsidered.", "Please share the reason for the decision in writing."],
+             ["I don't agree with the decision on {topic}.", "Please review it again this week."]],
+      pa: [["I see {topic} didn't quite make the cut.", "Happy to hear the reasoning :)"],
+           ["Bold choice on {topic}.", "Could we talk about it? :)"]] },
+
+    { id: 'recognition', feel: 'hurt', why: "your extra effort went unnoticed", tf: 'the extra hours I put in',
+      topics: [],
+      re: [/\b(nobody|no one|no-one|never|not even)\b.*\b(thank\w*|thanks|appreciat\w*|noticed|acknowledg\w*)\b/, /\bwithout (a |any )?(thanks|thank you)\b/,
+           /\b(worked|stayed|working) (till|until|late)\b/],
+      subject: ['About the extra hours', 'Recognising the extra effort', 'Acknowledgement of extra hours'],
+      warm: [["I put in some long hours on this, and a quick word would have meant a lot.", "Could we touch base on how it went?"],
+             ["I went the extra mile on this one and I'm proud of it.", "Could we talk about how it landed?"]],
+      straight: [["I put in {topic} to get this done.", "Could we make sure that kind of effort gets acknowledged?"],
+                 ["The late nights on this went unmentioned.", "Could we talk about how extra effort is recognised?"]],
+      firm: [["I worked well beyond my hours on this, and it went unacknowledged.", "Please make sure that effort is recognised."],
+             ["{Topic} shouldn't go unnoticed.", "I'd like it on record in my next review."]],
+      pa: [["Happy to report the work got done, at 2am, quietly.", "No thanks needed, apparently :)"],
+           ["The late nights were their own reward, I suppose.", "A quick thanks would be a nice bonus :)"]] },
+
+    { id: 'breaks', feel: 'frustrated', why: 'your breaks keep getting taken over', tf: 'my lunch break', topics: ['my lunch break'], not: /\b(fridge|my food|eat(s|ing)? my)\b/,
+      re: [/\blunch\b/, /\bwhen i (sit down to )?eat\b/, /\b(my|a|the) break\b/, /\bno time to eat\b/],
+      subject: ['About {topic}', 'Keeping {topic} free', 'Protecting {topic}'],
+      warm: [["I'd love to keep {topic} free where I can.", "Could we try to schedule things outside it?"],
+             ["I've noticed things keep landing on {topic}.", "Would it be OK to move them a little earlier or later?"]],
+      straight: [["Things keep getting booked over {topic}.", "Could we keep that hour free from now on?"],
+                 ["I need {topic} to recharge and stay sharp.", "Could we schedule calls outside that hour?"]],
+      firm: [["I'll be keeping {topic} free from now on.", "Please book anything else outside that hour."],
+             ["{Topic} isn't available for calls or work.", "Please schedule around it going forward."]],
+      pa: [["Funny how everything urgent happens right over {topic}.", "Maybe after I've eaten? :)"],
+           ["I'll be unreachable over {topic}, shocking as that may be.", "Back right after :)"]] },
+
+    { id: 'pay', feel: 'disappointed', why: "your pay doesn't match the work you're doing", tf: 'my pay', topics: ['my salary hike', 'a pay rise', 'my salary', 'my bonus'],
+      not: /\b(won'?t|not|refus\w*) (to )?pay\b|\bpay for\b/,
+      re: [/\b(salary|hike|increment|raise|pay rise|pay|bonus|compensation|ctc)\b/, /\b\d+ ?(%|percent)\b/, /\bearns? more\b/],
+      subject: ['Discussing {topic}', 'Request to review {topic}', 'Formal request: review of {topic}'],
+      warm: [["I'd like to talk about {topic} and how it reflects the work I've been doing.", "Could we find some time this week?"],
+             ["I've been thinking about {topic}, and I'd value a proper conversation.", "Could we set up a short meeting?"]],
+      straight: [["I'd like to discuss {topic}, as it doesn't reflect the scope I've been covering.", "Could we set up a time this week?"],
+                 ["I'd like to discuss {topic} with you properly.", "Could we review it together, with what I've delivered this year?"]],
+      firm: [["I'm asking for a formal review of {topic}.", "Please let me know the process and a date for it."],
+             ["{Topic} doesn't match the work I'm doing.", "Please set up a review of it this month."]],
+      pa: [["Just doing some quick maths on {topic} versus my workload.", "Could we compare notes? :)"],
+           ["I'm sure {topic} was a typo.", "Happy to look at it together :)"]] },
+
+    { id: 'promotion', feel: 'disappointed', why: "a promise about your role hasn't been kept", tf: 'my promotion', topics: ['my promotion', 'my role and title'],
+      re: [/\bpromot(ion|ed|e)\b/, /\b(title|designation)\b/, /\bpromised\b/, /\b(team lead|manager'?s) (role|job)\b/],
+      subject: ['Following up on {topic}', 'Next steps on {topic}', 'Formal follow-up: {topic}'],
+      warm: [["I wanted to check in on {topic}, as it's really important to me.", "Could we talk about a clear timeline?"],
+             ["{Topic} has been on my mind since we last spoke.", "Could we look at where things stand?"]],
+      straight: [["We discussed {topic} before, and it hasn't happened yet.", "Could we agree a clear date and what's needed?"],
+                 ["I'd like to follow up on {topic}.", "What exactly needs to happen, and by when?"]],
+      firm: [["{Topic} was promised and hasn't happened.", "Please confirm a date and the criteria in writing."],
+             ["I need a clear answer on {topic}.", "Please share a firm timeline this week."]],
+      pa: [["Just checking whether {topic} is still on this year's calendar.", "Or next year's :)"],
+           ["Gently circling back on {topic}, which I believe was promised.", "Any update? :)"]] },
+
+    { id: 'talkedover', feel: 'hurt', why: 'you keep getting talked over', tf: 'being interrupted when I speak',
+      re: [/\btalks? over\b/, /\btalking over\b/, /\bcut(s|ting)? me off\b/, /\binterrupt\w*\b/, /\bdon'?t let me (finish|speak)\b/],
+      subject: ['About our meetings', 'A request for meetings', 'Meeting conduct'],
+      warm: [["In meetings I sometimes don't get to finish my point.", "Could we make sure everyone gets to finish?"],
+             ["I'd love a bit more room to share my view in meetings.", "Could you help me get a word in?"]],
+      straight: [["I've noticed I often get cut off when I speak in meetings.", "Could I finish my point before we move on?"],
+                 ["I'd like to be able to finish my points in meetings.", "Could we keep an eye on that from now on?"]],
+      firm: [["I need to be able to finish my point in meetings.", "Please let me finish before responding."],
+             ["Being cut off mid-point isn't working for me.", "Please let me finish when I'm speaking."]],
+      pa: [["I had a great point earlier, I'll share it in writing.", "Maybe I'll get to the end of it this time :)"],
+           ["I'll put my thoughts in the chat, since the meeting moved fast.", "Easier to finish a sentence there :)"]] },
+
+    { id: 'covering', feel: 'frustrated', why: "you're covering for someone else", tf: 'covering for others', topics: ['covering for others'],
+      re: [/\bcover(ing)? for\b/, /\bcover(ing)? (the |his |her |their )?(night |day |morning |weekend )?(shift|work|duties)\b/, /\bdoing (his|her|their) (job|work)\b/],
+      subject: ['About covering for others', 'Covering arrangements', 'Covering: needs a fix'],
+      warm: [["I've been happy to help by covering, but it's become a regular thing.", "Could we find a fairer setup?"],
+             ["Covering for others is starting to eat into my own work.", "Could we talk about how to share it?"]],
+      straight: [["I've been covering for others regularly, and it's affecting my own work.", "Could we agree a proper plan for cover?"],
+                 ["Covering has become a routine part of my week.", "Can we fix the underlying issue?"]],
+      firm: [["I can't keep covering on a regular basis.", "Please put a proper cover plan in place this week."],
+             ["Regular cover isn't part of my role.", "Please arrange a fair rota."]],
+      pa: [["Happy to keep covering, I'm practically two people now.", "Maybe two salaries too? :)"],
+           ["I seem to have picked up a second job without noticing.", "Could we chat about that? :)"]] },
+
+    { id: 'incident', feel: 'angry', why: 'something broke and you were left to clean it up', tf: 'the broken release', topics: ['the production issue', 'the broken build', 'the broken release'],
+      re: [/\b(prod|production|build|release|deploy\w*|server|site|app|code|branch)\b.*\b(broke|broken|crash\w*|down|fail\w*)\b|\b(broke|broken|crash\w*)\b.*\b(prod|production|build|release|deploy\w*|server|site|app)\b/,
+           /\b(outage|incident|hotfix|rollback|rolled back)\b/, /\bwithout (tests|testing|review)\b/, /\b(pushed|merged)\b/],
+      subject: ['About {topic}', 'Avoiding a repeat of {topic}', 'Incident follow-up: {topic}'],
+      warm: [["{Topic} is sorted now, but it was a rough one.", "Could we agree a quick check before anything ships?"],
+             ["I've fixed {topic}, and I'd love to stop it happening again.", "Could we look at the release steps together?"]],
+      straight: [["I had to fix {topic} outside working hours.", "Could we agree that changes are tested and someone's around after a release?"],
+                 ["{Topic} cost me my weekend.", "Can we add a review step before anything goes live?"]],
+      firm: [["{Topic} should not have gone out untested.", "Please make sure changes are reviewed and supported after release."],
+             ["I won't be the default fixer for {topic}.", "Please stay available after you release anything."]],
+      pa: [["Spent a lovely weekend with {topic}.", "Maybe a quick test next time? :)"],
+           ["{Topic} and I are now very close friends.", "A review before release would be lovely :)"]] },
+
+    { id: 'leave', feel: 'frustrated', why: 'your time off is being held up', tf: 'my leave request', topics: ['my leave request', 'comp off for the weekend we worked'],
+      re: [/\bleave( request| application)?\b(?! me\b)/, /\bcomp[ -]?off\b/, /\bno comp[ -]?off\b/, /\bday off\b/, /\btime off\b/],
+      subject: ['About {topic}', 'Update needed: {topic}', 'Pending: {topic}'],
+      warm: [["I wanted to check on {topic}, as it means a lot to me.", "Could you let me know where it stands?"],
+             ["Just a gentle nudge on {topic}.", "Any news on it?"]],
+      straight: [["I'm waiting to hear back on {topic}.", "Could I get an answer this week?"],
+                 ["{Topic} still needs an answer.", "Could you confirm it by Friday so I can plan?"]],
+      firm: [["{Topic} still hasn't been answered.", "Please confirm it in writing by end of this week."],
+             ["I need a decision on {topic}.", "Please approve it, or tell me the reason, by Friday."]],
+      pa: [["Checking whether {topic} is still on its way.", "No rush, it's only my life :)"],
+           ["Just wondering if {topic} got lost somewhere.", "Any sighting? :)"]] },
+
+    { id: 'privacy', feel: 'hurt', why: 'something private of yours was shared', tf: 'my private details', topics: ['my medical details', 'my salary details'],
+      re: [/\b(shar\w*|forward\w*|told|show\w*|leak\w*)\b.*\b(my )?(salary|pay|medical|certificate|health|personal|private|details)\b/,
+           /\bconfidential\b/, /\b(with|to) the (whole |entire )?(team|department|group|office)\b/],
+      subject: ['About {topic}', 'Keeping {topic} private', 'Confidentiality concern'],
+      warm: [["I was a bit thrown to see {topic} shared more widely.", "Could we keep things like that private in future?"],
+             ["I'd like to keep {topic} between us.", "Could you check with me before sharing anything personal?"]],
+      straight: [["{Topic} got shared more widely than I'd expect.", "Could we keep personal details confidential from now on?"],
+                 ["I wasn't comfortable with {topic} being shared.", "Please check with me before sharing anything personal."]],
+      firm: [["{Topic} should not have been shared.", "Please keep my personal information confidential."],
+             ["Sharing {topic} wasn't appropriate.", "Please confirm it won't happen again."]],
+      pa: [["Fascinating to see {topic} doing the rounds.", "Maybe keep the next update just between us? :)"],
+           ["I see {topic} became common knowledge.", "Happy to keep the rest a surprise :)"]] },
+
+    { id: 'vendor', feel: 'impatient', why: "you're stuck waiting on a supplier", tf: 'the delivery', topics: ['the mix-up with the parts', 'the delivery', 'a response from support'], not: /\bout of order\b/,
+      re: [/\b(vendor|supplier|courier|shipment|shipped|parts|order(ed)?)\b/, /\bwrong (parts|items|order)\b/],
+      subject: ['Following up on {topic}', 'Update needed: {topic}', 'Escalation: {topic}'],
+      warm: [["Just checking in on {topic}.", "Could you share an update when you can?"],
+             ["We're keen to get {topic} sorted.", "Any news on a fix or a date?"]],
+      straight: [["{Topic} is holding up our work.", "Could you confirm a date for it today?"],
+                 ["We still need {topic} sorted as agreed.", "When can we expect that?"]],
+      firm: [["{Topic} is now seriously affecting our operations.", "Please confirm a firm date today, or we'll need to escalate."],
+             ["{Topic} still isn't resolved.", "Please confirm the fix and the date by end of day."]],
+      pa: [["Just checking that {topic} hasn't taken the scenic route.", "Any update? :)"],
+           ["We're still eagerly awaiting news on {topic}.", "Any day now :)"]] },
+
+    { id: 'afterhours', feel: 'frustrated', why: 'work keeps spilling past your working hours', tf: 'messages after hours', topics: ['calls after hours', 'messages after hours', 'weekend work'],
+      re: [/\b(midnight|late at night|at night)\b/, /\b(9|10|11|12)\s?pm\b/, /\b(1|2|3|4|5)\s?am\b/,
+           /\b(weekends?|saturday|sunday|holiday|diwali)\b/, /\bwhatsapp\b/, /\bafter (hours|work|office)\b/],
+      subject: ['About {topic}', 'Working hours', 'My working hours'],
+      warm: [["I'm trying to switch off properly outside work hours.", "Could we keep {topic} for real emergencies?"],
+             ["I want to be fresh for work, so I'm protecting my time off.", "Could we keep my time off free unless it's urgent?"]],
+      straight: [["I'm not available for work outside my working hours.", "Could we keep {topic} for genuine emergencies?"],
+                 ["Work outside my hours makes it hard to rest and do good work.", "Can it wait until the next working day unless it's urgent?"]],
+      firm: [["I don't take work outside my working hours.", "Please hold anything non-urgent until the next working day."],
+             ["Work outside my hours needs to stop unless it's a real emergency.", "Please send it during working hours."]],
+      pa: [["I'm sure {topic} felt very urgent at the time.", "I'll see it first thing in the morning :)"],
+           ["My phone and I keep office hours now.", "See it in the morning :)"]] },
+
     { id: 'repeat', feel: 'frustrated', why: "you've had to repeat yourself",
       re: [/\balready (told|said|sent|explained|mentioned|asked|shared)\b/, /\bhow many times\b/,
            /\b(\d+|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|fifteen|twenty|hundred|hundreds|thousand|thousands|million|millions|zillion|many|countless|umpteen) times\b/,
-           /\btwice\b/, /\brepeat(ing|ed)?( myself)?\b/, /\b(told|said|explained|mentioned) (you|this|it|that) (before|already)\b/, /\bagain\b/],
+           /\btwice\b/, /\bagain and again\b/, /\brepeat(ing|ed)?( myself)?\b/, /\b(told|said|explained|mentioned) (you|this|it|that) (before|already)\b/, /\bagain\b/],
       subject: ['Quick recap', 'Summary for reference', 'Final reiteration (please keep for reference)'],
       warm: [["Sharing this again in one place, in case it got buried.", "Happy to jump on a quick call if that's easier."],
              ["Here's the short version again, in case my earlier message wasn't clear.", "Could we pin it somewhere easy to find?"]],
@@ -146,7 +298,7 @@
 
     { id: 'credit', feel: 'hurt', why: 'someone took credit for your work',
       re: [/\b(took|take|taking|takes|stole|steal|stealing|steals) (the |all the |my )?credit\b/, /\bmy idea\b/,
-           /\bstole my\b/, /\bpresented my\b/, /\bclaim(ed|ing|s)? (it|my|the)\b/],
+           /\bstole my\b/, /\bpresented my\b/, /\bas (yours|theirs|his|hers|(your|their|his|her) own)\b/, /\bcop(y|ied)[ -]?past\w*\b/, /\bclaim(ed|ing|s)? (it|my|the)\b/],
       subject: ['Background on the idea', 'Original proposal (for reference)', 'Attribution of work'],
       warm: [["So glad the idea landed well!", "I'd love to stay involved as it moves forward."],
              ["Great to see the idea get picked up!", "Happy to share the background work behind it."]],
@@ -319,6 +471,101 @@
 
   var NOUNS = /\b(report|deck|slides|presentation|document|doc|spreadsheet|invoice|code|ticket|proposal|contract|designs?|budget|data|numbers|figures|summary|draft|analysis|forecast|minutes|payment|quote|estimate|brief|pull request|pr|release|build|notes|form|application|files?|sheet|update|approval|feedback|plan|review|task)\b/;
   var NOUN_FIX = { doc: 'document', pr: 'pull request' };
+
+  // What the message is about: [pattern, clean phrase]. First match wins, so specific entries come first.
+  // The phrase is ours, so nothing rude from the original message can reach the reply.
+  var TOPICS = [
+    [/\b(fridge|my food|my lunch from|eat(s|ing)? my)\b/, 'food going missing from the fridge'],
+    [/\bmicrowav\w*|\bsmell\w*\b/, 'food smells in the pantry'],
+    [/\b(mugs?|dishes|sink)\b/, 'dirty dishes in the sink'],
+    [/\b(washroom|toilet|restroom|bathroom)s?\b/, 'the washroom'],
+    [/\blunch\b|\bwhen i (sit down to )?eat\b/, 'my lunch break'],
+    [/\bvoice (notes?|messages?)\b/, 'voice notes'],
+    [/\btag(s|ging|ged)? me\b|\bmention(s|ing)? me\b/, 'being tagged in every message'],
+    [/\b(reply|replying|replies) all\b/, 'reply-all threads'],
+    [/\bcall\w*\b.*\b(\d{1,2} ?pm|night|midnight)\b|\b(\d{1,2} ?pm|night|midnight)\b.*\bcall\w*\b/, 'calls after hours'],
+    [/\b(midnight|late at night|whatsapp|1[01] ?pm|[1-4] ?am)\b/, 'messages after hours'],
+    [/\bnight shift\b/, 'the night shift'],
+    [/\bcomp[ -]?off\b/, 'comp off for the weekend we worked'],
+    [/\b(weekends?|saturday|sunday)\b/, 'weekend work'],
+    [/\bsick (day|leave)s?\b/, 'how sick days are treated'],
+    [/\bwork from home\b|\bwfh\b/, 'my cancelled work from home day'],
+    [/\bleave( request| application)?\b(?! me\b)(?! early\b)/, 'my leave request'],
+    [/\b(medical|certificate|health)\b/, 'my medical details'],
+    [/\b(shared|told|forwarded)\b.*\bsalary\b/, 'my salary details'],
+    [/\bbonus\b/, 'my bonus'],
+    [/\b(hike|increment)\b|\b\d+ ?(%|percent)\b/, 'my salary hike'],
+    [/\b(raise|pay rise)\b/, 'a pay rise'],
+    [/\b(salary|compensation|ctc)\b|\bpay\b(?! for)/, 'my salary'],
+    [/\bappraisal|\brating\b/, 'my appraisal'],
+    [/\bpromot(ion|ed|e)\b/, 'my promotion'],
+    [/\b(title|designation|team lead role|role)\b/, 'my role and title'],
+    [/\breplacement\b/, 'training my replacement'],
+    [/\b(talks? over|talking over|cut(s|ting)? me off|interrupt\w*)\b/, 'being interrupted when I speak'],
+    [/\bcover(ing)? for\b/, 'covering for others'],
+    [/\b1:1s?\b|\bone[- ]on[- ]ones?\b|\bone-to-ones?\b/, 'our 1:1s'],
+    [/\bstandups?\b/, 'standup'],
+    [/\b[5-8] ?am\b|\bearly (morning )?meetings?\b/, 'the early morning meetings'],
+    [/\b(reorg|restructur\w*)\b/, 'the reorg'],
+    [/\b(production|prod)\b/, 'the production issue'],
+    [/\b(the|a) build\b/, 'the broken build'],
+    [/\b(release|deploy\w*)\b.*\b(broke\w*|crash\w*|fail\w*)\b|\bbroke\w*\b.*\brelease\b/, 'the broken release'],
+    [/\brelease\b/, 'the release'],
+    [/\b(code )?review comments?\b/, 'the review comments'],
+    [/\b(pr|pull request)\b/, 'my pull request review'],
+    [/\b(printer|scanner|projector)\b/, 'the $1'],
+    [/\bcoffee machine\b/, 'the coffee machine'],
+    [/\b(ac|air ?con\w*|temperature|heating)\b/, 'the AC'],
+    [/\b(wifi|wi-fi|internet|network)\b/, 'the wifi'],
+    [/\b(laptop|computer|pc)\b/, 'my laptop'],
+    [/\bmonitor\b/, 'my monitor request'],
+    [/\bcharger\b/, 'my charger'],
+    [/\bparking\b/, 'my parking spot'],
+    [/\b(conference|meeting|training) room\b|\bbook(ed|ing|s)? the\b.*\broom\b/, 'the room bookings'],
+    [/\bshared drive\b|\bfolders?\b/, 'the shared drive'],
+    [/\bonboarding\b/, 'the onboarding docs'],
+    [/\btracker\b/, 'the tracker'],
+    [/\bbudget\b/, 'the budget'],
+    [/\b(reimburs\w*|expense claims?|travel claims?)\b/, 'my reimbursement'],
+    [/\brefund\b/, 'the refund'],
+    [/\b(invoice|payment)\b/, 'the overdue payment'],
+    [/\b(discount\w*|price|pricing)\b/, 'the agreed price'],
+    [/\b(revisions?|fixed fee)\b/, 'the number of revisions'],
+    [/\b(extra|new) (features?|hours|work)\b|\bscope\b/, 'the extra scope'],
+    [/\blogo\b/, 'the logo changes'],
+    [/\bredesign\b|\bwebsite\b/, 'the redesign timeline'],
+    [/\bdemo\b/, 'the demo'],
+    [/\bpresentation\b/, 'the presentation'],
+    [/\b(training|new tool)\b/, 'training on the new tool'],
+    [/\bbrief\b/, 'the brief'],
+    [/\blaunch\b/, 'the launch'],
+    [/\bcomplaints?\b/, 'customer complaints'],
+    [/\btickets?\b/, 'how tickets are shared'],
+    [/\b(intern|same questions?)\b/, 'the repeated questions'],
+    [/\b(vendor|supplier)\b.*\b(parts|boxes|order|deliver\w*|shipped)\b|\b(parts|boxes|shipment)\b/, 'the delivery'],
+    [/\bwrong (parts|items|order)\b/, 'the mix-up with the parts'],
+    [/\bon hold\b/, 'a response from support'],
+    [/\bproject\b/, 'the project'],
+    [/\bdeadline\b/, 'the deadline'],
+    [/\bfeedback\b/, 'the feedback'],
+    [/\bnumbers\b/, 'my numbers'],
+    [/\b(emails?)\b/, 'the emails']
+  ];
+
+  // Situations whose keywords are loose ("calls", "late", "again"): one weak hit should not beat a clear topic.
+  var LOOSE = { meeting: 1, deadline: 1, repeat: 1, noreply: 1, notread: 1, incompetence: 1, scope: 1, mindchange: 1, leftout: 1 };
+
+  // No situation (or a weak one), but we know the topic: name it, then the feeling decides the ask.
+  // With no clear feeling, the generic ask would talk about "points"; this one fits a named topic.
+  var TOPIC_ASK = { warm: 'Do you have ten minutes today?', straight: 'Could we talk it through today?',
+    firm: 'Please let me know when we can discuss it.', pa: 'Worth a quick chat :)' };
+
+  var TOPIC_SAY = {
+    warm: ["I'd like to talk about {topic}.", "There's something about {topic} I'd like to talk through."],
+    straight: ["I want to flag an issue with {topic}.", "I'd like to sort out {topic}."],
+    firm: ["I need to raise a concern about {topic}.", "I'd like {topic} dealt with properly."],
+    pa: ["Just a gentle note about {topic}.", "Bringing up {topic} again, in case it slipped through."]
+  };
   var NUMBER_WORDS = { two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
     eleven: 11, twelve: 12, fifteen: 15, twenty: 20 };
   var WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
@@ -357,6 +604,16 @@
     return NOUN_FIX[m[1]] || m[1];
   }
 
+  // The first topic that matches; with `allowed`, the first one on that list.
+  function findTopic(t, allowed) {
+    for (var i = 0; i < TOPICS.length; i++) {
+      if (allowed && allowed.indexOf(TOPICS[i][1]) < 0) continue;
+      var m = t.match(TOPICS[i][0]);
+      if (m) return TOPICS[i][1].replace('$1', m[1] || '');
+    }
+    return null;
+  }
+
   function fill(tpl, vars) {
     return tpl.replace(/\{(\w+)\}/g, function (all, key) { return vars[key] != null ? vars[key] : all; });
   }
@@ -370,6 +627,7 @@
   function detectCats(t) {
     var found = [];
     CATS.forEach(function (c, i) {
+      if (c.not && c.not.test(t)) return;
       var score = 0;
       c.re.forEach(function (r) { if (r.test(t)) score++; });
       // "again" alone is weak evidence of repetition; it needs another hint.
@@ -377,13 +635,14 @@
       if (score) found.push({ cat: c, score: score, order: i });
     });
     found.sort(function (a, b) { return b.score - a.score || a.order - b.order; });
-    return found.slice(0, 3).map(function (f) { return f.cat; });
+    return found.slice(0, 3);
   }
 
   function analyse(text) {
     var raw = String(text || '');
     var t = normalise(raw);
-    var cats = detectCats(t);
+    var hits = detectCats(t);
+    var cats = hits.map(function (h) { return h.cat; });
     var scores = {}, words = [];
     FEELING_ORDER.forEach(function (f) { scores[f] = 0; });
 
@@ -429,6 +688,8 @@
       sure: bestScore >= 2 && bestScore - second >= 1,
       words: words.slice(0, 4),
       categories: cats.map(function (c) { return c.id; }),
+      leadScore: hits.length ? hits[0].score : 0,
+      topic: findTopic(t),
       reason: cats.length ? cats[0].why : '',
       // Repeating yourself and not being read are the same complaint, so don't count it twice.
       also: cats.slice(1).filter(function (c) {
@@ -476,6 +737,11 @@
 
     var lead = null;
     for (var i = 0; i < CATS.length; i++) if (CATS[i].id === a.categories[0]) lead = CATS[i];
+    var topic = a.topic;
+    // A loose one-word match ("calls", "late") loses to a clear topic.
+    if (lead && LOOSE[lead.id] && a.leadScore < 2 && topic && !(lead.count && count)) lead = null;
+    // No listed topic: the work noun ("the report") still names it when there's no situation.
+    if (!lead && !topic && thing) topic = 'the ' + (thing === 'update' ? 'updates' : thing);
 
     var pair;
     if (lead) {
@@ -483,13 +749,21 @@
       if (lead.count && count) pair[0] = pick(lead.count[key], seed);
     } else {
       pair = choosePair(GENERIC[feeling][key], seed, group);
+      if (topic) {
+        pair[0] = pick(TOPIC_SAY[key], seed);
+        if (feeling === 'neutral') pair[1] = TOPIC_ASK[key];
+      }
     }
+    // A situation with its own wording only takes topics that fit it; otherwise its own default.
+    if (lead && lead.topics) topic = findTopic(t, lead.topics);
 
     var vars = { thing: thing || (lead && lead.fallback) || 'work' };
     vars.Thing = cap(vars.thing);
+    vars.topic = topic || (lead && lead.tf) || 'this';
+    vars.Topic = cap(vars.topic);
     if (count) { vars.count = count.count; vars.countth = count.countth; }
 
-    var lines = [fill(pair[0], vars), fill(pair[1], vars)];
+    var lines = [cap(fill(pair[0], vars)), fill(pair[1], vars)];
     if (!pa && level === 0 && lead && FEEL_LINE[feeling]) lines.unshift(pick(FEEL_LINE[feeling], seed + 2));
     if (group) lines = lines.map(forGroup);
     if (who === 'client' || who === 'manager' || format === 'email') lines = lines.map(function (l) { return l.replace(/\s*:\)/g, '').replace(/([^.!?])$/, '$1.'); });
@@ -498,7 +772,7 @@
     var r = {
       format: format, level: level, levelName: pa ? 'Passive-aggressive' : LEVELS[level], pa: pa, to: who,
       feeling: feeling, feelingLabel: FEELINGS[feeling].label, detected: a, categories: a.categories.length ? a.categories : ['generic'],
-      lines: lines
+      topic: topic, lines: lines
     };
 
     if (format === 'chat') {
@@ -533,7 +807,67 @@
     return out.join('\n');
   }
 
-  var api = { compose: compose, analyse: analyse, toPlainText: toPlainText, LEVELS: LEVELS, FEELINGS: FEELINGS,
+  /* ---------- Checking AI-written messages ---------- */
+  // The AI writes three versions; these rules decide which ones are fit to show, and in what order.
+
+  var SHOUT = /\b[A-Z]{5,}\b/;
+  var ASK = /\?|\b(please|could|can we|can you|can i|would you|would it|let'?s|shall we|i'?ll|i will|let me know)\b/i;
+  var GREETING = /^\s*(hi|hello|hey|dear|good (morning|afternoon|evening))\b[^,.!]*[,.!]?\s*/i;
+  var NON_ASCII_SYMBOL = new RegExp('[' + String.fromCharCode(0x2600) + '-' + String.fromCharCode(0x27BF) + ']|[' +
+    String.fromCharCode(0xD83C) + '-' + String.fromCharCode(0xD83E) + '][' + String.fromCharCode(0xDC00) + '-' + String.fromCharCode(0xDFFF) + ']', 'g');
+
+  // Tidy what the model wrote: drop a leading greeting, emoji, wrapping quotes and extra spaces.
+  function tidy(text) {
+    return String(text || '').replace(NON_ASCII_SYMBOL, '').replace(CURLY, "'")
+      .replace(new RegExp('[' + String.fromCharCode(0x201C, 0x201D) + ']', 'g'), '"')
+      .replace(/^\s*["']|["']\s*$/g, '').replace(GREETING, '').replace(/\s+/g, ' ').replace(/\s+([.,!?])/g, '$1').trim()
+      .replace(/^./, function (c) { return c.toUpperCase(); });
+  }
+
+  function sentenceCount(s) {
+    return (s.match(/[^.!?]+[.!?]+(\s|$)|[^.!?]+$/g) || []).filter(function (x) { return /\w/.test(x); }).length;
+  }
+
+  function mentionsDetail(text, details) {
+    var t = normalise(text);
+    return (details || []).some(function (d) {
+      var words = normalise(d).split(/[^a-z0-9:%'-]+/).filter(function (w) { return w.length >= 3 || /\d/.test(w); });
+      return words.some(function (w) { return t.indexOf(w) >= 0; });
+    });
+  }
+
+  function checkMessage(text, details, opts) {
+    opts = opts || {};
+    var problems = [];
+    var t = normalise(text);
+    if (!t || t.length < 15) problems.push('empty');
+    if (sentenceCount(text) > 3) problems.push('too many sentences');
+    if (text.split(/\s+/).length > 60) problems.push('too long');
+    if (SWEAR.test(t) || INSULT.test(t)) problems.push('rude word');
+    if (SHOUT.test(text)) problems.push('shouting');
+    if (/\byou (always|never)\b/.test(t)) problems.push('always/never');
+    if (!opts.pa && /\b(per my last|as per my previous|as i already said)\b/.test(t)) problems.push('passive-aggressive');
+    if (!ASK.test(text)) problems.push('no ask');
+    if ((text.match(/\?/g) || []).length > 2) problems.push('too many questions');
+    if (opts.to === 'group' && /^you\b/i.test(text)) problems.push('singles someone out');
+    if (details && details.length && !mentionsDetail(text, details)) problems.push('misses the details');
+    if (!opts.warm && /\b(angry|furious|pissed)\b/.test(t)) problems.push('names anger');
+    return { ok: problems.length === 0, problems: problems };
+  }
+
+  // Tidy, check and order the versions: the ones that pass come first, shortest ask first.
+  function rankVersions(versions, details, opts) {
+    var seen = {};
+    return (versions || []).map(tidy).filter(function (v) {
+      var k = normalise(v); if (!k || seen[k]) return false; seen[k] = 1; return true;
+    }).map(function (v, i) {
+      var c = checkMessage(v, details, opts);
+      return { text: v, ok: c.ok, problems: c.problems, order: i };
+    }).sort(function (a, b) { return (b.ok - a.ok) || (a.problems.length - b.problems.length) || (a.order - b.order); });
+  }
+
+  var api = { compose: compose, analyse: analyse, toPlainText: toPlainText, checkMessage: checkMessage,
+    rankVersions: rankVersions, tidy: tidy, LEVELS: LEVELS, FEELINGS: FEELINGS,
     FEELING_ORDER: FEELING_ORDER, RECIPIENTS: RECIPIENTS, _cats: CATS, _generic: GENERIC };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.WorkPhrasing = api;
