@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>workphrasing</title>
+<meta name="description" content="Type what you really want to say at work. workphrasing turns it into a calm, professional email you can actually send. Runs in your browser, nothing is saved.">
+<meta name="color-scheme" content="light">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<style>
+@font-face {
+  font-family: "Pixelify Sans";
+  src: url("assets/PixelifySans.ttf") format("truetype");
+  font-weight: 400 700;
+  font-display: swap;
+}
+:root {
+  --ink: #111;
+  --paper: #fff;
+  --desk-a: #c9c9c9;
+  --desk-b: #bdbdbd;
+  --muted: #555;
+  --soft: #f2f2f2;
+  --pixel: "Pixelify Sans", "Courier New", monospace;
+  --body: Geneva, Verdana, "Segoe UI", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  font: 16px/1.6 var(--body);
+  color: var(--ink);
+  background-color: var(--desk-a);
+  background-image: repeating-conic-gradient(var(--desk-a) 0% 25%, var(--desk-b) 0% 50%);
+  background-size: 4px 4px;
+  min-height: 100vh;
+}
+button, input, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px dashed var(--ink); outline-offset: 3px; }
+
+/* Menu bar */
+.menubar {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; align-items: center; gap: 18px;
+  height: 30px; padding: 0 16px;
+  background: var(--paper); border-bottom: 2px solid var(--ink);
+  font-size: 14px;
+}
+.menubar .app { display: flex; align-items: center; gap: 8px; font-family: var(--pixel); font-size: 17px; font-weight: 700; }
+.menubar .app svg { width: 18px; height: 18px; }
+.menubar button {
+  background: none; border: 0; padding: 2px 8px; cursor: pointer; font-size: 14px;
+}
+.menubar button:hover { background: var(--ink); color: var(--paper); }
+.menubar .spacer { flex: 1; }
+.menubar .clock { font-variant-numeric: tabular-nums; }
+
+/* Windows */
+main { max-width: 720px; margin: 0 auto; padding: 40px 16px 24px; }
+.window {
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
+  margin-bottom: 36px;
+}
+.titlebar {
+  position: relative; height: 26px;
+  border-bottom: 2px solid var(--ink);
+  background: repeating-linear-gradient(to bottom, var(--paper) 0 3px, var(--ink) 3px 4px);
+  background-clip: content-box; padding: 5px 4px;
+}
+.titlebar .box {
+  position: absolute; left: 10px; top: 5px; width: 14px; height: 14px;
+  background: var(--paper); border: 2px solid var(--ink); box-shadow: 0 0 0 3px var(--paper);
+}
+.titlebar h2 {
+  position: absolute; left: 50%; top: 1px; transform: translateX(-50%);
+  margin: 0; padding: 0 10px; background: var(--paper);
+  font: 700 15px/22px var(--pixel); white-space: nowrap;
+}
+.pane { padding: 28px 32px 30px; }
+
+h1 { font: 700 34px/1.15 var(--pixel); margin: 0 0 6px; letter-spacing: .5px; }
+.lede { margin: 0 0 22px; color: var(--muted); }
+
+label.big { display: block; font-weight: 700; margin-bottom: 8px; }
+textarea {
+  display: block; width: 100%; min-height: 128px; resize: vertical;
+  padding: 12px 14px; border: 2px solid var(--ink); border-radius: 0;
+  background: var(--paper); box-shadow: inset 2px 2px 0 var(--soft);
+  line-height: 1.5;
+}
+textarea::placeholder { color: #888; }
+
+.tries { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 12px 0 26px; font-size: 14px; color: var(--muted); }
+.chip {
+  border: 1px solid var(--ink); background: var(--paper); border-radius: 10px;
+  padding: 2px 10px; cursor: pointer; font-size: 13px; color: var(--ink); text-align: left;
+}
+.chip:hover { background: var(--ink); color: var(--paper); }
+
+/* Spice control */
+fieldset { border: 0; padding: 0; margin: 0 0 28px; }
+legend { font-weight: 700; padding: 0; margin-bottom: 10px; }
+.spice input[type=range] {
+  -webkit-appearance: none; appearance: none; width: 100%; height: 28px; margin: 0;
+  background: transparent; cursor: pointer;
+}
+.spice input[type=range]::-webkit-slider-runnable-track {
+  height: 6px; border: 2px solid var(--ink); background:
+    linear-gradient(var(--ink), var(--ink)) 0 0 / var(--fill, 50%) 100% no-repeat, var(--paper);
+}
+.spice input[type=range]::-moz-range-track {
+  height: 2px; border: 2px solid var(--ink); background: var(--paper);
+}
+.spice input[type=range]::-moz-range-progress { height: 6px; background: var(--ink); }
+.spice input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 20px; height: 24px; margin-top: -11px;
+  background: var(--paper); border: 2px solid var(--ink); box-shadow: 2px 2px 0 var(--ink);
+}
+.spice input[type=range]::-moz-range-thumb {
+  width: 16px; height: 20px; border-radius: 0;
+  background: var(--paper); border: 2px solid var(--ink); box-shadow: 2px 2px 0 var(--ink);
+}
+.stops { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 6px; font-size: 14px; }
+.stops button {
+  background: none; border: 0; padding: 2px 4px; cursor: pointer; color: var(--muted);
+}
+.stops button:nth-child(1) { text-align: left; }
+.stops button:nth-child(2) { text-align: center; }
+.stops button:nth-child(3) { text-align: right; }
+.stops span { display: inline-block; padding: 1px 6px; line-height: 1.35; }
+.stops button[aria-pressed=true] { color: var(--ink); }
+.stops button[aria-pressed=true] span { background: var(--ink); color: var(--paper); }
+
+/* Classic default button with the outer ring */
+.actions { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.btn {
+  border: 2px solid var(--ink); background: var(--paper); border-radius: 8px;
+  padding: 6px 18px; cursor: pointer; font-weight: 700;
+}
+.btn:active, .btn.pressed { background: var(--ink); color: var(--paper); }
+.btn.default { box-shadow: 0 0 0 3px var(--paper), 0 0 0 6px var(--ink); padding: 8px 26px; font-size: 17px; margin: 6px; }
+.hint { font-size: 13px; color: var(--muted); }
+
+/* Smart mode */
+.smart { margin: 22px 0 0; font-size: 14px; display: none; }
+.smart.on { display: block; }
+.smart label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.smart input { width: 16px; height: 16px; accent-color: var(--ink); }
+.smart .note { display: block; color: var(--muted); font-size: 13px; margin-left: 24px; }
+
+/* Draft window */
+#draft[hidden] { display: none; }
+#draft { animation: open .28s steps(4) both; scroll-margin-top: 48px; }
+@keyframes open { from { transform: scale(.94); opacity: 0; } to { transform: none; opacity: 1; } }
+.fields { border-bottom: 2px solid var(--ink); }
+.field { display: flex; align-items: center; gap: 10px; padding: 8px 32px; border-bottom: 1px solid #ccc; }
+.field:last-child { border-bottom: 0; }
+.field .k { width: 64px; flex: none; color: var(--muted); font-size: 14px; }
+.field input {
+  flex: 1; min-width: 0; border: 0; border-bottom: 1px dashed transparent; padding: 2px 0; background: transparent;
+}
+.field input:hover, .field input:focus { border-bottom-color: var(--ink); outline: none; }
+.field .v { font-weight: 700; }
+.mail { padding: 22px 32px 6px; }
+.mail p { margin: 0 0 14px; }
+.mail .sig { white-space: pre-line; }
+.heard { padding: 0 32px 6px; font-size: 13px; color: var(--muted); }
+.draft-actions { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; padding: 14px 32px 24px; }
+.status { font-size: 14px; min-height: 1.4em; }
+
+footer { max-width: 720px; margin: 0 auto; padding: 0 16px 48px; font-size: 14px; }
+footer .card { background: var(--paper); border: 2px solid var(--ink); padding: 10px 16px; display: flex; gap: 10px 20px; flex-wrap: wrap; justify-content: space-between; }
+footer a { color: var(--ink); }
+
+/* About dialog */
+dialog { padding: 0; border: 2px solid var(--ink); box-shadow: 4px 4px 0 var(--ink); max-width: 420px; width: calc(100% - 32px); }
+dialog::backdrop { background: rgba(0,0,0,.15); }
+dialog .pane { padding: 22px 26px 24px; }
+dialog p { margin: 0 0 12px; }
+dialog a { color: var(--ink); }
+dialog .btnrow { text-align: right; margin-top: 18px; }
+
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+@media (max-width: 560px) {
+  main { padding-top: 24px; }
+  .pane { padding: 22px 18px 24px; }
+  .field, .mail, .heard, .draft-actions { padding-left: 18px; padding-right: 18px; }
+  h1 { font-size: 28px; }
+  .stops { font-size: 12px; }
+  .menubar .clock { display: none; }
+  .hint { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #draft { animation: none; }
+}
+</style>
+</head>
+<body>
+<div class="menubar">
+  <span class="app">
+    <svg viewBox="0 0 9 9" shape-rendering="crispEdges" aria-hidden="true"><path fill="#111" d="M0 1h9v7H0z"/><path fill="#fff" d="M1 2h7v5H1z"/><path fill="#111" d="M1 2h1v1H1zM2 3h1v1H2zM3 4h1v1H3zM4 5h1v1H4zM5 4h1v1H5zM6 3h1v1H6zM7 2h1v1H7z"/></svg>
+    workphrasing
+  </span>
+  <button type="button" id="aboutBtn">About</button>
+  <span class="spacer"></span>
+  <span class="clock" id="clock" aria-hidden="true"></span>
+</div>
+
+<main>
+  <section class="window" aria-labelledby="title">
+    <div class="titlebar"><span class="box" aria-hidden="true"></span><h2>workphrasing</h2></div>
+    <div class="pane">
+      <h1 id="title">Say it how you feel.</h1>
+      <p class="lede">Then send it how you should. Type the message you really want to send at work, and get back a calm, professional email.</p>
+
+      <label class="big" for="rant">What you want to say</label>
+      <textarea id="rant" maxlength="2000" placeholder="Are you blind? I already told you this three times!"></textarea>
+
+      <div class="tries">
+        <span>Try one:</span>
+        <button type="button" class="chip">This meeting could have been an email.</button>
+        <button type="button" class="chip">Why do you send urgent work at 7pm on a Friday?</button>
+        <button type="button" class="chip">You keep changing your mind and I keep redoing it.</button>
+      </div>
+
+      <fieldset class="spice">
+        <legend id="spiceLabel">How spicy?</legend>
+        <input type="range" id="spice" min="0" max="2" step="1" value="1" aria-labelledby="spiceLabel">
+        <div class="stops" id="stops">
+          <button type="button" data-level="0"><span>Polite</span></button>
+          <button type="button" data-level="1"><span>Passive-aggressive</span></button>
+          <button type="button" data-level="2"><span>Devastatingly professional</span></button>
+        </div>
+      </fieldset>
+
+      <div class="actions">
+        <button type="button" class="btn default" id="go">Rephrase</button>
+        <span class="hint">or press Ctrl + Enter</span>
+      </div>
+
+      <div class="smart" id="smart">
+        <label><input type="checkbox" id="smartToggle"> Smart mode</label>
+        <span class="note" id="smartNote">Uses the AI built into your Chrome, on this device. Off means the built-in phrasebook.</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="window" id="draft" hidden aria-labelledby="draftTitle">
+    <div class="titlebar"><span class="box" aria-hidden="true"></span><h2 id="draftTitle">New message (not sent)</h2></div>
+    <div class="fields">
+      <div class="field"><label class="k" for="to">To</label><input id="to" placeholder="Their name (optional)" autocomplete="off"></div>
+      <div class="field"><label class="k" for="from">From</label><input id="from" placeholder="Your name (optional)" autocomplete="off"></div>
+      <div class="field"><span class="k">Subject</span><span class="v" id="subject"></span></div>
+    </div>
+    <div class="mail" id="mail" aria-live="polite"></div>
+    <p class="heard" id="heard"></p>
+    <div class="draft-actions">
+      <button type="button" class="btn" id="copy">Copy</button>
+      <button type="button" class="btn" id="again">Another version</button>
+      <span class="status" id="status" role="status"></span>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="card">
+    <span>Nothing you type leaves your browser, and your message is never saved.</span>
+    <a href="https://mridulsaravanan.com/#/projects">More projects</a>
+  </div>
+</footer>
+
+<dialog id="about" aria-labelledby="aboutTitle">
+  <div class="titlebar"><span class="box" aria-hidden="true"></span><h2 id="aboutTitle">About workphrasing</h2></div>
+  <div class="pane">
+    <p><strong>workphrasing</strong> turns a heated message into a calm, professional email, at the spice level you choose.</p>
+    <p>It runs entirely in your browser. What you type is never sent anywhere, and your message is never stored. Only your spice level and the name for your sign-off are remembered, on this device.</p>
+    <p>Your own words are never copied into the email, so nothing rude slips through.</p>
+    <p>Smart mode appears only when your Chrome has its own on-device AI. It also stays on your device.</p>
+    <p>One of the projects at <a href="https://mridulsaravanan.com/#/projects">mridulsaravanan.com</a>.</p>
+    <div class="btnrow"><button type="button" class="btn default" id="aboutOk">OK</button></div>
+  </div>
+</dialog>
+
+<script src="engine.js"></script>
+<script>
+(function () {
+  'use strict';
+  var WP = window.WorkPhrasing;
+  var $ = function (id) { return document.getElementById(id); };
+  var rant = $('rant'), spice = $('spice'), draft = $('draft'), mail = $('mail');
+  var toIn = $('to'), fromIn = $('from'), status = $('status');
+
+  var HEARD = { repeat: 'repeating yourself', notread: 'they did not read it', blame: 'blame',
+    deadline: 'waiting on something', meeting: 'meetings', incompetence: 'poor work', credit: 'credit taken',
+    micromanage: 'micromanaging', lastminute: 'last-minute requests', scope: 'too much work',
+    noreply: 'no reply', mindchange: 'changing requirements', replyall: 'too many emails',
+    frustrated: 'frustration', generic: 'general frustration' };
+
+  var state = { text: '', level: 1, version: 0, smartBody: null, result: null };
+
+  function store(key, val) { try { localStorage.setItem('wp.' + key, val); } catch (e) {} }
+  function load(key) { try { return localStorage.getItem('wp.' + key); } catch (e) { return null; } }
+
+  // Spice level
+  function setLevel(n) {
+    state.level = n;
+    spice.value = n;
+    spice.style.setProperty('--fill', (n * 50) + '%');
+    spice.setAttribute('aria-valuetext', WP.LEVELS[n]);
+    Array.prototype.forEach.call($('stops').children, function (b) {
+      b.setAttribute('aria-pressed', String(+b.dataset.level === n));
+    });
+    store('level', n);
+    if (state.result) { state.smartBody = null; run(false); }
+  }
+  spice.addEventListener('input', function () { setLevel(+spice.value); });
+  $('stops').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (b) setLevel(+b.dataset.level);
+  });
+
+  // Examples
+  Array.prototype.forEach.call(document.querySelectorAll('.chip'), function (c) {
+    c.addEventListener('click', function () { rant.value = c.textContent; rant.focus(); run(true); });
+  });
+
+  function el(tag, text, cls) {
+    var n = document.createElement(tag);
+    if (text != null) n.textContent = text;
+    if (cls) n.className = cls;
+    return n;
+  }
+
+  function render() {
+    var r = WP.rephrase(state.text, { level: state.level, version: state.version, to: toIn.value });
+    if (state.smartBody) { r.body = state.smartBody; r.opener = ''; }
+    state.result = r;
+    $('subject').textContent = r.subject;
+    mail.textContent = '';
+    mail.appendChild(el('p', r.greeting));
+    if (r.opener) mail.appendChild(el('p', r.opener));
+    r.body.forEach(function (p) { mail.appendChild(el('p', p)); });
+    mail.appendChild(el('p', r.closer));
+    var sig = r.signoff + (fromIn.value.trim() ? '\n' + fromIn.value.trim() : '');
+    mail.appendChild(el('p', sig, 'sig'));
+    $('heard').textContent = state.smartBody ? 'Written by smart mode, on your device.'
+      : 'What it picked up: ' + r.categories.map(function (c) { return HEARD[c] || c; }).join(', ') + '.';
+  }
+
+  function plainText() {
+    var r = state.result;
+    var lines = ['Subject: ' + r.subject, '', r.greeting, ''];
+    if (r.opener) lines.push(r.opener, '');
+    r.body.forEach(function (p) { lines.push(p, ''); });
+    lines.push(r.closer, '', r.signoff);
+    if (fromIn.value.trim()) lines.push(fromIn.value.trim());
+    return lines.join('\n');
+  }
+
+  function say(msg) {
+    status.textContent = msg;
+    clearTimeout(say.t);
+    say.t = setTimeout(function () { status.textContent = ''; }, 3500);
+  }
+
+  async function run(fresh) {
+    var text = rant.value.trim();
+    if (!text) { rant.focus(); rant.placeholder = 'Type something first, however rude. Nobody else will see it.'; return; }
+    if (fresh || text !== state.text) { state.version = 0; state.smartBody = null; }
+    state.text = text;
+    if ($('smartToggle').checked && smart.ready !== false && !state.smartBody) {
+      var go = $('go');
+      go.disabled = true; go.textContent = 'Thinking...';
+      try {
+        state.smartBody = await smartRewrite(text, state.level);
+      } catch (e) {
+        state.smartBody = null;
+        say('Smart mode did not work this time, so the phrasebook wrote it.');
+      }
+      go.disabled = false; go.textContent = 'Rephrase';
+    }
+    var first = draft.hidden;
+    draft.hidden = false;
+    render();
+    if (first) draft.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+  }
+
+  $('go').addEventListener('click', function () { run(false); });
+  rant.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); run(false); }
+  });
+  $('again').addEventListener('click', function () {
+    state.version++; state.smartBody = null;
+    if ($('smartToggle').checked) run(false); else render();
+  });
+  toIn.addEventListener('input', function () { if (state.result) render(); });
+  fromIn.addEventListener('input', function () { store('from', fromIn.value); if (state.result) render(); });
+
+  $('copy').addEventListener('click', function () {
+    var text = plainText();
+    function fallback() {
+      var t = document.createElement('textarea');
+      t.value = text; t.setAttribute('readonly', ''); t.style.position = 'fixed'; t.style.opacity = '0';
+      document.body.appendChild(t); t.select();
+      var ok = false; try { ok = document.execCommand('copy'); } catch (e) {}
+      t.remove();
+      say(ok ? 'Copied. Paste it into your email.' : 'Could not copy. Select the text and copy it by hand.');
+    }
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(function () { say('Copied. Paste it into your email.'); }, fallback);
+    } else fallback();
+  });
+
+  // About dialog
+  var about = $('about');
+  $('aboutBtn').addEventListener('click', function () { about.showModal(); });
+  $('aboutOk').addEventListener('click', function () { about.close(); });
+
+  // Menu bar clock
+  function tick() {
+    var d = new Date();
+    $('clock').textContent = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  }
+  tick(); setInterval(tick, 15000);
+
+  // Smart mode: only offered when this Chrome exposes its on-device language model.
+  var LM_OPTS = { expectedInputs: [{ type: 'text', languages: ['en'] }], expectedOutputs: [{ type: 'text', languages: ['en'] }] };
+  var TONES = [
+    'warm, kind and genuinely polite',
+    'polite on the surface but clearly passive-aggressive, in classic "per my last email" office style',
+    'cold, formal and devastatingly professional: firm, precise, puts things on the record, but never rude'
+  ];
+  var RUDE = /\b(stupid|idiot|useless|incompetent|moron|fuck|shit|damn|wtf|ffs|crap|bloody)\b/i;
+  var smart = { ready: null };
+
+  async function smartRewrite(text, level) {
+    var session = await LanguageModel.create(Object.assign({
+      initialPrompts: [{ role: 'system', content:
+        'You rewrite angry workplace messages as the body of a professional email. Tone: ' + TONES[level] + '. ' +
+        'Keep the real complaint and any specific details. Never include insults, swearing or rude words. ' +
+        'Reply with 2 to 4 sentences of email body only: no greeting, no sign-off, no subject line, no quotation marks.' }],
+      monitor: function (m) {
+        m.addEventListener('downloadprogress', function (e) {
+          $('go').textContent = 'Downloading AI ' + Math.round(e.loaded * 100) + '%';
+        });
+      }
+    }, LM_OPTS));
+    try {
+      var out = String(await session.prompt(text)).trim().replace(/^["']|["']$/g, '');
+      if (!out || RUDE.test(out) || out.length > 1200) throw new Error('unusable');
+      return out.split(/\n\s*\n/).map(function (p) { return p.replace(/\s+/g, ' ').trim(); }).filter(Boolean);
+    } finally {
+      if (session.destroy) session.destroy();
+    }
+  }
+
+  async function initSmart() {
+    if (!('LanguageModel' in window)) return;
+    try {
+      var a = await LanguageModel.availability(LM_OPTS);
+      if (a === 'unavailable') return;
+      smart.ready = true;
+      $('smart').classList.add('on');
+      if (a !== 'available') {
+        $('smartNote').textContent = 'Uses the AI built into your Chrome, on this device. The first use downloads Chrome\'s model once, which is large and can take a while.';
+      }
+      $('smartToggle').checked = load('smart') === '1';
+      $('smartToggle').addEventListener('change', function (e) {
+        store('smart', e.target.checked ? '1' : '0');
+        state.smartBody = null;
+        if (state.result) run(false);
+      });
+    } catch (e) { /* no smart mode on this browser */ }
+  }
+
+  // Start
+  var saved = parseInt(load('level'), 10);
+  setLevel(saved >= 0 && saved <= 2 ? saved : 1);
+  fromIn.value = load('from') || '';
+  initSmart();
+})();
+</script>
+</body>
+</html>
