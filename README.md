@@ -13,5 +13,6 @@ Live: https://mridulsaravanan.com/workphrasing/
 - **Private.** It runs entirely in your browser. Nothing you type is sent anywhere or saved, and your own words are
   never copied into the message.
 
-`engine.js` holds the phrasebook and the feeling detector. `index.html` is the page. The font is Pixelify Sans
-(SIL Open Font License, `assets/OFL-PixelifySans.txt`).
+`engine.js` holds the phrasebook and the feeling detector. `index.html` is the page. The fonts are Figtree and
+Pixelify Sans, both self-hosted under the SIL Open Font License (`assets/fonts/OFL-Figtree.txt`,
+`assets/fonts/OFL-PixelifySans.txt`).
